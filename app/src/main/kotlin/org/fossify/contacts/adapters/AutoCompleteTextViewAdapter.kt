@@ -18,6 +18,8 @@ import org.fossify.commons.models.contacts.Contact
 import org.fossify.contacts.activities.SimpleActivity
 import org.fossify.contacts.databinding.ItemAutocompleteNameNumberBinding
 import org.fossify.contacts.extensions.config
+import org.fossify.contacts.extensions.getSortKey
+import java.util.Locale
 
 class AutoCompleteTextViewAdapter(
     val activity: SimpleActivity,
@@ -76,7 +78,7 @@ class AutoCompleteTextViewAdapter(
                 val results = mutableListOf<Contact>()
                 contacts.forEach {
                     val nameToDisplay = if (activity.config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
-                    if (nameToDisplay.contains(searchString, true)) {
+                    if (nameToDisplay.getSortKey(activity).contains(searchString, true)) {
                         results.add(it)
                     }
                 }
@@ -84,11 +86,11 @@ class AutoCompleteTextViewAdapter(
                 results.sortWith(compareBy<Contact>
                 {
                     val nameToDisplay = if (activity.config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
-                    nameToDisplay.startsWith(searchString, true)
+                    nameToDisplay.getSortKey(activity).startsWith(searchString, true)
                 }.thenBy
                 {
                     val nameToDisplay = if (activity.config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
-                    nameToDisplay.contains(searchString, true)
+                    nameToDisplay.getSortKey(activity).contains(searchString, true)
                 })
                 results.reverse()
 

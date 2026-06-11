@@ -28,6 +28,7 @@ import org.fossify.contacts.adapters.GroupsAdapter
 import org.fossify.contacts.databinding.FragmentLayoutBinding
 import org.fossify.contacts.databinding.FragmentLettersLayoutBinding
 import org.fossify.contacts.extensions.config
+import org.fossify.contacts.extensions.getSortKey
 import org.fossify.contacts.helpers.AVOID_CHANGING_TEXT_TAG
 import org.fossify.contacts.helpers.AVOID_CHANGING_VISIBILITY_TAG
 import org.fossify.contacts.helpers.Config
@@ -120,60 +121,62 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
             return
         }
 
-        if (config.lastUsedContactSource.isEmpty()) {
-            val grouped = contacts.groupBy { it.source }.maxWithOrNull(compareBy { it.value.size })
-            config.lastUsedContactSource = grouped?.key ?: ""
-        }
+        ensureBackgroundThread {
+            if (config.lastUsedContactSource.isEmpty()) {
+                val grouped = contacts.groupBy { it.source }.maxWithOrNull(compareBy { it.value.size })
+                config.lastUsedContactSource = grouped?.key ?: ""
+            }
 
-        allContacts = contacts
-        var filtered = when (this) {
-            is GroupsFragment -> contacts
-            is FavoritesFragment -> {
-                val contactSources = activity!!.getVisibleContactSources()
-                val favouriteContacts = contacts
-                    .filter { it.starred == 1 && contactSources.contains(it.source) }
+            allContacts = contacts
+            var filtered = when (this) {
+                is GroupsFragment -> contacts
+                is FavoritesFragment -> {
+                    val contactSources = activity!!.getVisibleContactSources()
+                    val favouriteContacts = contacts
+                        .filter { it.starred == 1 && contactSources.contains(it.source) }
 
-                if (activity!!.config.isCustomOrderSelected) {
-                    sortFavourites(favouriteContacts)
-                } else {
-                    favouriteContacts
+                    if (activity!!.config.isCustomOrderSelected) {
+                        sortFavourites(favouriteContacts)
+                    } else {
+                        favouriteContacts
+                    }
+                }
+
+                else -> {
+                    val contactSources = activity!!.getVisibleContactSources()
+                    contacts.filter { contactSources.contains(it.source) }
                 }
             }
 
-            else -> {
-                val contactSources = activity!!.getVisibleContactSources()
-                contacts.filter { contactSources.contains(it.source) }
+            if (this !is GroupsFragment && !activity!!.config.isCustomOrderSelected) {
+                val sorting = config.sorting
+                filtered = filtered.sortedWith(compareBy {
+                    val name = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    name.getSortKey(context)
+                })
+
+                if (sorting and SORT_DESCENDING != 0) {
+                    filtered = filtered.reversed()
+                }
             }
-        }
 
-        if (config.showNicknameInstead && this !is GroupsFragment && !activity!!.config.isCustomOrderSelected) {
-            val sorting = config.sorting
-            filtered = filtered.sortedWith(compareBy {
-                val name = if (it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
-                name.lowercase(Locale.getDefault()).normalizeString()
-            })
-
-            if (sorting and SORT_DESCENDING != 0) {
-                filtered = filtered.reversed()
+            var currentHash = 0
+            filtered.forEach {
+                currentHash += it.getHashWithoutPrivatePhoto()
             }
-        }
 
-        var currentHash = 0
-        filtered.forEach {
-            currentHash += it.getHashWithoutPrivatePhoto()
-        }
+            if (currentHash != lastHashCode || skipHashComparing || filtered.isEmpty()) {
+                skipHashComparing = false
+                lastHashCode = currentHash
+                activity?.runOnUiThread {
+                    setupContacts(filtered)
 
-        if (currentHash != lastHashCode || skipHashComparing || filtered.isEmpty()) {
-            skipHashComparing = false
-            lastHashCode = currentHash
-            activity?.runOnUiThread {
-                setupContacts(filtered)
-
-                if (placeholderText != null) {
-                    innerBinding.fragmentPlaceholder.text = placeholderText
-                    innerBinding.fragmentPlaceholder.tag = AVOID_CHANGING_TEXT_TAG
-                    innerBinding.fragmentPlaceholder2.beGone()
-                    innerBinding.fragmentPlaceholder2.tag = AVOID_CHANGING_VISIBILITY_TAG
+                    if (placeholderText != null) {
+                        innerBinding.fragmentPlaceholder.text = placeholderText
+                        innerBinding.fragmentPlaceholder.tag = AVOID_CHANGING_TEXT_TAG
+                        innerBinding.fragmentPlaceholder2.beGone()
+                        innerBinding.fragmentPlaceholder2.tag = AVOID_CHANGING_VISIBILITY_TAG
+                    }
                 }
             }
         }
@@ -228,7 +231,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                 }
             }
 
-            storedGroups = storedGroups.asSequence().sortedWith(compareBy { it.title.lowercase(Locale.getDefault()).normalizeString() })
+            storedGroups = storedGroups.asSequence().sortedWith(compareBy { it.title.getSortKey(context) })
                 .toMutableList() as ArrayList<Group>
 
             innerBinding.fragmentPlaceholder2.beVisibleIf(storedGroups.isEmpty())
@@ -304,8 +307,9 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                     name = contact.getNameToDisplay()
                 }
 
-                val character = if (name.isNotEmpty()) name.substring(0, 1) else ""
-                FastScrollItemIndicator.Text(character.normalizeString().uppercase(Locale.getDefault()))
+                val sortKey = name.getSortKey(context)
+                val character = if (sortKey.isNotEmpty()) sortKey.substring(0, 1) else ""
+                FastScrollItemIndicator.Text(character.uppercase(Locale.getDefault()))
             } catch (e: Exception) {
                 FastScrollItemIndicator.Text("")
             }
@@ -334,37 +338,42 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
         val adapter = innerBinding.fragmentList.adapter
         val fixedText = text.trim().replace("\\s+".toRegex(), " ")
         if (adapter is ContactsAdapter) {
-            val shouldNormalize = fixedText.normalizeString() == fixedText
-            val filtered = contactsIgnoringSearch.filter {
-                val nameToDisplay = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
-                getProperText(nameToDisplay, shouldNormalize).contains(fixedText, true) ||
-                    getProperText(it.nickname, shouldNormalize).contains(fixedText, true) ||
-                    (fixedText.toLongOrNull() != null && it.phoneNumbers.any {
-                        fixedText.normalizePhoneNumber().isNotEmpty() && it.normalizedNumber.contains(fixedText.normalizePhoneNumber(), true)
-                    }) ||
-                    it.emails.any { it.value.contains(fixedText, true) } ||
-                    it.addresses.any { getProperText(it.value, shouldNormalize).contains(fixedText, true) } ||
-                    it.IMs.any { it.value.contains(fixedText, true) } ||
-                    getProperText(it.notes, shouldNormalize).contains(fixedText, true) ||
-                    getProperText(it.organization.company, shouldNormalize).contains(fixedText, true) ||
-                    getProperText(it.organization.jobPosition, shouldNormalize).contains(fixedText, true) ||
-                    it.websites.any { it.contains(fixedText, true) }
-            } as ArrayList
+            ensureBackgroundThread {
+                val shouldNormalize = fixedText.normalizeString() == fixedText
+                val filtered = contactsIgnoringSearch.filter {
+                    val nameToDisplay = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    nameToDisplay.getSortKey(context).contains(fixedText, true) ||
+                        getProperText(it.nickname, shouldNormalize).contains(fixedText, true) ||
+                        (fixedText.toLongOrNull() != null && it.phoneNumbers.any {
+                            fixedText.normalizePhoneNumber().isNotEmpty() && it.normalizedNumber.contains(fixedText.normalizePhoneNumber(), true)
+                        }) ||
+                        it.emails.any { it.value.contains(fixedText, true) } ||
+                        it.addresses.any { getProperText(it.value, shouldNormalize).contains(fixedText, true) } ||
+                        it.IMs.any { it.value.contains(fixedText, true) } ||
+                        getProperText(it.notes, shouldNormalize).contains(fixedText, true) ||
+                        getProperText(it.organization.company, shouldNormalize).contains(fixedText, true) ||
+                        getProperText(it.organization.jobPosition, shouldNormalize).contains(fixedText, true) ||
+                        it.websites.any { it.contains(fixedText, true) }
+                } as ArrayList
 
-            filtered.sortBy {
-                val nameToDisplay = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
-                !getProperText(nameToDisplay, shouldNormalize).startsWith(fixedText, true) && !nameToDisplay.contains(fixedText, true)
-            }
+                filtered.sortBy {
+                    val nameToDisplay = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    val sortKey = nameToDisplay.getSortKey(context)
+                    !sortKey.startsWith(fixedText, true) && !sortKey.contains(fixedText, true)
+                }
 
-            if (filtered.isEmpty() && this@MyViewPagerFragment is FavoritesFragment) {
-                if (innerBinding.fragmentPlaceholder.tag != AVOID_CHANGING_TEXT_TAG) {
-                    innerBinding.fragmentPlaceholder.text = activity?.getString(org.fossify.commons.R.string.no_contacts_found)
+                activity?.runOnUiThread {
+                    if (filtered.isEmpty() && this@MyViewPagerFragment is FavoritesFragment) {
+                        if (innerBinding.fragmentPlaceholder.tag != AVOID_CHANGING_TEXT_TAG) {
+                            innerBinding.fragmentPlaceholder.text = activity?.getString(org.fossify.commons.R.string.no_contacts_found)
+                        }
+                    }
+
+                    innerBinding.fragmentPlaceholder.beVisibleIf(filtered.isEmpty())
+                    adapter.updateItems(filtered, fixedText.normalizeString())
+                    setupLetterFastscroller(filtered)
                 }
             }
-
-            innerBinding.fragmentPlaceholder.beVisibleIf(filtered.isEmpty())
-            adapter.updateItems(filtered, fixedText.normalizeString())
-            setupLetterFastscroller(filtered)
         } else if (adapter is GroupsAdapter) {
             val filtered = groupsIgnoringSearch.filter {
                 it.title.contains(fixedText, true)

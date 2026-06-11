@@ -18,6 +18,7 @@ import org.fossify.contacts.adapters.ContactsAdapter
 import org.fossify.contacts.databinding.ActivityGroupContactsBinding
 import org.fossify.contacts.dialogs.SelectContactsDialog
 import org.fossify.contacts.extensions.config
+import org.fossify.contacts.extensions.getSortKey
 import org.fossify.contacts.extensions.handleGenericContactClick
 import org.fossify.contacts.extensions.viewContact
 import org.fossify.contacts.helpers.GROUP
@@ -113,27 +114,29 @@ class GroupContactsActivity : SimpleActivity(), RemoveFromGroupListener, Refresh
 
     private fun refreshContacts() {
         ContactsHelper(this).getContacts {
-            wasInit = true
-            allContacts = it
+            ensureBackgroundThread {
+                wasInit = true
+                allContacts = it
 
-            var filtered = it.filter { it.groups.map { it.id }.contains(group.id) } as ArrayList<Contact>
-            if (config.showNicknameInstead) {
+                var filtered = it.filter { it.groups.map { it.id }.contains(group.id) } as ArrayList<Contact>
                 val sorting = config.sorting
                 filtered = filtered.sortedWith(compareBy {
-                    val name = if (it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
-                    name.lowercase(Locale.getDefault()).normalizeString()
+                    val name = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    name.getSortKey(this@GroupContactsActivity)
                 }).toMutableList() as ArrayList<Contact>
 
                 if (sorting and SORT_DESCENDING != 0) {
                     filtered.reverse()
                 }
-            }
 
-            groupContacts = filtered
-            binding.groupContactsPlaceholder2.beVisibleIf(groupContacts.isEmpty())
-            binding.groupContactsPlaceholder.beVisibleIf(groupContacts.isEmpty())
-            binding.groupContactsFastscroller.beVisibleIf(groupContacts.isNotEmpty())
-            updateContacts(groupContacts)
+                runOnUiThread {
+                    groupContacts = filtered
+                    binding.groupContactsPlaceholder2.beVisibleIf(groupContacts.isEmpty())
+                    binding.groupContactsPlaceholder.beVisibleIf(groupContacts.isEmpty())
+                    binding.groupContactsFastscroller.beVisibleIf(groupContacts.isNotEmpty())
+                    updateContacts(groupContacts)
+                }
+            }
         }
     }
 

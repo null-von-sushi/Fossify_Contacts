@@ -42,6 +42,7 @@ import org.fossify.contacts.activities.ViewContactActivity
 import org.fossify.contacts.dialogs.CreateNewGroupDialog
 import org.fossify.contacts.extensions.config
 import org.fossify.contacts.extensions.editContact
+import org.fossify.contacts.extensions.getSortKey
 import org.fossify.contacts.extensions.shareContacts
 import org.fossify.contacts.helpers.*
 import org.fossify.contacts.interfaces.RefreshContactsListener
@@ -501,7 +502,8 @@ class ContactsAdapter(
             contact.getNameToDisplay()
         }
 
-        return if (name.isNotEmpty()) name.substring(0, 1).uppercase() else ""
+        val sortKey = name.getSortKey(activity)
+        return if (sortKey.isNotEmpty()) sortKey.substring(0, 1).uppercase() else ""
     }
 
     override fun onRowMoved(fromPosition: Int, toPosition: Int) {
