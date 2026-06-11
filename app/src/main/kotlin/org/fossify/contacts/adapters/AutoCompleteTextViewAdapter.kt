@@ -18,6 +18,7 @@ import org.fossify.commons.models.contacts.Contact
 import org.fossify.contacts.activities.SimpleActivity
 import org.fossify.contacts.databinding.ItemAutocompleteNameNumberBinding
 import org.fossify.contacts.extensions.config
+import org.fossify.contacts.extensions.getProperName
 import org.fossify.contacts.extensions.getSortKey
 import java.util.Locale
 
@@ -31,7 +32,7 @@ class AutoCompleteTextViewAdapter(
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val contact = resultList[position]
         var listItem = convertView
-        val nameToUse = if (activity.config.showNicknameInstead && contact.nickname.isNotEmpty()) contact.nickname else contact.getNameToDisplay()
+        val nameToUse = contact.getProperName(activity.config)
         if (listItem == null || listItem.tag != nameToUse.isNotEmpty()) {
             listItem = ItemAutocompleteNameNumberBinding.inflate(activity.layoutInflater, parent, false).root
         }
@@ -77,7 +78,7 @@ class AutoCompleteTextViewAdapter(
                 val searchString = constraint.toString().normalizeString()
                 val results = mutableListOf<Contact>()
                 contacts.forEach {
-                    val nameToDisplay = if (activity.config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    val nameToDisplay = it.getProperName(activity.config)
                     if (nameToDisplay.getSortKey(activity).contains(searchString, true)) {
                         results.add(it)
                     }
@@ -85,11 +86,11 @@ class AutoCompleteTextViewAdapter(
 
                 results.sortWith(compareBy<Contact>
                 {
-                    val nameToDisplay = if (activity.config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    val nameToDisplay = it.getProperName(activity.config)
                     nameToDisplay.getSortKey(activity).startsWith(searchString, true)
                 }.thenBy
                 {
-                    val nameToDisplay = if (activity.config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    val nameToDisplay = it.getProperName(activity.config)
                     nameToDisplay.getSortKey(activity).contains(searchString, true)
                 })
                 results.reverse()
@@ -112,7 +113,7 @@ class AutoCompleteTextViewAdapter(
         }
 
         override fun convertResultToString(resultValue: Any?) = (resultValue as? Contact)?.let {
-            if (activity.config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+            it.getProperName(activity.config)
         }
     }
 

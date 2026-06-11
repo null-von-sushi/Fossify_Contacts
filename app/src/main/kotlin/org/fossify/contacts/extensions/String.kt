@@ -5,6 +5,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.icu.text.Transliterator
 import org.fossify.commons.extensions.normalizeString
+import org.fossify.commons.models.contacts.Contact
+import org.fossify.contacts.helpers.Config
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
@@ -54,4 +56,26 @@ fun String.getSortKey(context: Context): String {
     sortKeyCache[this] = result
     context.getSharedPreferences(SORT_KEY_PREFS, Context.MODE_PRIVATE).edit().putString(this, result).apply()
     return result
+}
+
+fun String.containsHanzi() = any { it.code in 0x4E00..0x9FFF || it.code in 0x3400..0x4DBF }
+
+private fun Char.isLatin() = this.code in 65..122
+
+fun Contact.getProperName(config: Config, useNickname: Boolean = true): String {
+    val name = if (useNickname && config.showNicknameInstead && nickname.isNotEmpty()) {
+        nickname
+    } else {
+        getNameToDisplay()
+    }
+
+    if (config.startNameWithSurname && name.contains(", ")) {
+        val hasHanzi = surname.containsHanzi() || firstName.containsHanzi()
+        if (hasHanzi) {
+            val needsSpace = (surname.isNotEmpty() && surname.last().isLatin()) ||
+                             (firstName.isNotEmpty() && firstName.first().isLatin())
+            return if (needsSpace) name.replace(", ", " ") else name.replace(", ", "")
+        }
+    }
+    return name
 }

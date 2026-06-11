@@ -71,7 +71,7 @@ fun SimpleActivity.showContactSourcePicker(currentSource: String, callback: (new
 fun BaseSimpleActivity.shareContacts(contacts: ArrayList<Contact>) {
     val filename = if (contacts.size == 1) {
         val contact = contacts.first()
-        val name = if (config.showNicknameInstead && contact.nickname.isNotEmpty()) contact.nickname else contact.getNameToDisplay()
+        val name = contact.getProperName(config)
         "$name.vcf"
     } else {
         DEFAULT_FILE_NAME

@@ -28,6 +28,7 @@ import org.fossify.contacts.adapters.GroupsAdapter
 import org.fossify.contacts.databinding.FragmentLayoutBinding
 import org.fossify.contacts.databinding.FragmentLettersLayoutBinding
 import org.fossify.contacts.extensions.config
+import org.fossify.contacts.extensions.getProperName
 import org.fossify.contacts.extensions.getSortKey
 import org.fossify.contacts.helpers.AVOID_CHANGING_TEXT_TAG
 import org.fossify.contacts.helpers.AVOID_CHANGING_VISIBILITY_TAG
@@ -151,7 +152,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
             if (this !is GroupsFragment && !activity!!.config.isCustomOrderSelected) {
                 val sorting = config.sorting
                 filtered = filtered.sortedWith(compareBy {
-                    val name = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    val name = it.getProperName(config)
                     name.getSortKey(context)
                 })
 
@@ -294,17 +295,23 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
             try {
                 val contact = contacts[position]
                 var name = when {
-                    context.config.showNicknameInstead && contact.nickname.isNotEmpty() -> contact.nickname
+                    config.showNicknameInstead && contact.nickname.isNotEmpty() -> contact.nickname
                     contact.isABusinessContact() -> contact.getFullCompany()
-                    sorting and SORT_BY_SURNAME != 0 && contact.surname.isNotEmpty() -> contact.surname
+                    sorting and SORT_BY_SURNAME != 0 && contact.surname.isNotEmpty() -> {
+                        val properName = contact.getProperName(config, false)
+                        if (properName.contains(", ")) properName.substringBefore(", ") else contact.surname
+                    }
                     sorting and SORT_BY_MIDDLE_NAME != 0 && contact.middleName.isNotEmpty() -> contact.middleName
                     sorting and SORT_BY_FIRST_NAME != 0 && contact.firstName.isNotEmpty() -> contact.firstName
-                    context.config.startNameWithSurname -> contact.surname
+                    config.startNameWithSurname -> {
+                        val properName = contact.getProperName(config, false)
+                        if (properName.contains(", ")) properName.substringBefore(", ") else contact.surname
+                    }
                     else -> contact.firstName
                 }
 
                 if (name.isEmpty()) {
-                    name = contact.getNameToDisplay()
+                    name = contact.getProperName(config)
                 }
 
                 val sortKey = name.getSortKey(context)
@@ -341,7 +348,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
             ensureBackgroundThread {
                 val shouldNormalize = fixedText.normalizeString() == fixedText
                 val filtered = contactsIgnoringSearch.filter {
-                    val nameToDisplay = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    val nameToDisplay = it.getProperName(config)
                     nameToDisplay.getSortKey(context).contains(fixedText, true) ||
                         getProperText(it.nickname, shouldNormalize).contains(fixedText, true) ||
                         (fixedText.toLongOrNull() != null && it.phoneNumbers.any {
@@ -357,7 +364,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                 } as ArrayList
 
                 filtered.sortBy {
-                    val nameToDisplay = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    val nameToDisplay = it.getProperName(config)
                     val sortKey = nameToDisplay.getSortKey(context)
                     !sortKey.startsWith(fixedText, true) && !sortKey.contains(fixedText, true)
                 }

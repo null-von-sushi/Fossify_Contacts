@@ -23,6 +23,7 @@ import org.fossify.contacts.activities.SimpleActivity
 import org.fossify.contacts.databinding.ItemAddFavoriteWithNumberBinding
 import org.fossify.contacts.databinding.ItemAddFavoriteWithoutNumberBinding
 import org.fossify.contacts.extensions.config
+import org.fossify.contacts.extensions.getProperName
 
 class SelectContactsAdapter(
     val activity: SimpleActivity, var contacts: ArrayList<Contact>, private val selectedContacts: ArrayList<Contact>, private val allowPickMultiple: Boolean,
@@ -97,7 +98,7 @@ class SelectContactsAdapter(
                 contactCheckbox.setColors(root.context.getProperTextColor(), root.context.getProperPrimaryColor(), root.context.getProperBackgroundColor())
                 val textColor = root.context.getProperTextColor()
 
-                val fullName = if (config.showNicknameInstead && contact.nickname.isNotEmpty()) contact.nickname else contact.getNameToDisplay()
+                val fullName = contact.getProperName(config)
                 contactName.text = if (textToHighlight.isEmpty()) fullName else {
                     if (fullName.contains(textToHighlight, true)) {
                         fullName.highlightTextPart(textToHighlight, adjustedPrimaryColor)
@@ -136,7 +137,10 @@ class SelectContactsAdapter(
                     val avatarName = when {
                         config.showNicknameInstead && contact.nickname.isNotEmpty() -> contact.nickname
                         contact.isABusinessContact() -> contact.getFullCompany()
-                        config.startNameWithSurname -> contact.surname
+                        config.startNameWithSurname -> {
+                            val name = contact.getProperName(config, false)
+                            if (name.contains(", ")) name.substringBefore(", ") else contact.surname
+                        }
                         else -> contact.firstName
                     }
 

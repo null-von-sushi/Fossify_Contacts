@@ -9,6 +9,7 @@ import org.fossify.contacts.activities.SimpleActivity
 import org.fossify.contacts.adapters.SelectContactsAdapter
 import org.fossify.contacts.databinding.DialogSelectContactBinding
 import org.fossify.contacts.extensions.config
+import org.fossify.contacts.extensions.getProperName
 import org.fossify.contacts.extensions.getSortKey
 import java.util.Locale
 
@@ -33,7 +34,7 @@ class SelectContactsDialog(
 
                 val sorting = activity.config.sorting
                 allContacts = allContacts.sortedWith(compareBy {
-                    val name = if (activity.config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    val name = it.getProperName(activity.config)
                     name.getSortKey(activity)
                 }).toMutableList() as ArrayList<Contact>
 
@@ -111,7 +112,7 @@ class SelectContactsDialog(
         binding.letterFastscroller.setupWithRecyclerView(binding.selectContactList, { position ->
             try {
                 val contact = allContacts[position]
-                val name = if (activity.config.showNicknameInstead && contact.nickname.isNotEmpty()) contact.nickname else contact.getNameToDisplay()
+                val name = contact.getProperName(activity.config)
                 val sortKey = name.getSortKey(activity)
                 val character = if (sortKey.isNotEmpty()) sortKey.substring(0, 1) else ""
                 FastScrollItemIndicator.Text(character.uppercase(Locale.getDefault()))

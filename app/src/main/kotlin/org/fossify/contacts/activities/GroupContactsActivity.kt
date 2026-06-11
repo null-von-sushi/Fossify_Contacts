@@ -18,6 +18,7 @@ import org.fossify.contacts.adapters.ContactsAdapter
 import org.fossify.contacts.databinding.ActivityGroupContactsBinding
 import org.fossify.contacts.dialogs.SelectContactsDialog
 import org.fossify.contacts.extensions.config
+import org.fossify.contacts.extensions.getProperName
 import org.fossify.contacts.extensions.getSortKey
 import org.fossify.contacts.extensions.handleGenericContactClick
 import org.fossify.contacts.extensions.viewContact
@@ -121,7 +122,7 @@ class GroupContactsActivity : SimpleActivity(), RemoveFromGroupListener, Refresh
                 var filtered = it.filter { it.groups.map { it.id }.contains(group.id) } as ArrayList<Contact>
                 val sorting = config.sorting
                 filtered = filtered.sortedWith(compareBy {
-                    val name = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    val name = it.getProperName(config)
                     name.getSortKey(this@GroupContactsActivity)
                 }).toMutableList() as ArrayList<Contact>
 
