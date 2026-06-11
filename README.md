@@ -3,6 +3,24 @@
 
 <a href='https://play.google.com/store/apps/details?id=org.fossify.contacts'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' height=80/></a> <a href="https://f-droid.org/packages/org.fossify.contacts/"><img src="https://fdroid.gitlab.io/artwork/badge/get-it-on-en.svg" alt="Get it on F-Droid" height=80/></a> <a href="https://apt.izzysoft.de/fdroid/index/apk/org.fossify.contacts"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height=80/></a>
 
+
+
+
+You're very welcome! I'm thrilled that you're happy with the results. It was a pleasure helping you make your Contacts app faster and more locale-aware.
+To recap everything we've done:
+1.
+Nickname Support: Added a setting to prioritize nicknames in lists and search.
+2.
+Pinyin Sorting: Chinese names are now correctly alphabetized under English letters (like Z for 周).
+3.
+High Performance: moving sorting to the background and adding a persistent cache ensures the app stays lightning-fast.
+4.
+Smart Name Formatting: No more awkward commas in Chinese names—they now display naturally based on the characters used.
+Enjoy your new and improved Contacts app! Feel free to reach out if you have any other requests in the future. Happy organizing! <3
+
+
+# FORK, Original Readme bellow:
+
 Introducing Fossify Contacts - the next evolution in contact management. Poised to redefine how you manage your contacts, our app combines simplicity with advanced features, tailored for both personal and professional use.  
 
 🔍 **SMART SEARCH & FIELD CUSTOMIZATION:**  
