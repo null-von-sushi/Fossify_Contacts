@@ -3,11 +3,12 @@ package org.fossify.contacts.dialogs
 import androidx.appcompat.app.AlertDialog
 import com.reddit.indicatorfastscroll.FastScrollItemIndicator
 import org.fossify.commons.extensions.*
-import org.fossify.commons.helpers.ensureBackgroundThread
+import org.fossify.commons.helpers.*
 import org.fossify.commons.models.contacts.Contact
 import org.fossify.contacts.activities.SimpleActivity
 import org.fossify.contacts.adapters.SelectContactsAdapter
 import org.fossify.contacts.databinding.DialogSelectContactBinding
+import org.fossify.contacts.extensions.config
 import java.util.Locale
 
 class SelectContactsDialog(
@@ -26,6 +27,18 @@ class SelectContactsDialog(
 
             if (showOnlyContactsWithNumber) {
                 allContacts = allContacts.filter { it.phoneNumbers.isNotEmpty() }.toMutableList() as ArrayList<Contact>
+            }
+
+            if (activity.config.showNicknameInstead) {
+                val sorting = activity.config.sorting
+                allContacts = allContacts.sortedWith(compareBy {
+                    val name = if (it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                    name.lowercase(Locale.getDefault()).normalizeString()
+                }).toMutableList() as ArrayList<Contact>
+
+                if (sorting and SORT_DESCENDING != 0) {
+                    allContacts.reverse()
+                }
             }
 
             initiallySelectedContacts = allContacts.filter { it.starred == 1 } as ArrayList<Contact>
@@ -94,7 +107,8 @@ class SelectContactsDialog(
 
         binding.letterFastscroller.setupWithRecyclerView(binding.selectContactList, { position ->
             try {
-                val name = allContacts[position].getNameToDisplay()
+                val contact = allContacts[position]
+                val name = if (activity.config.showNicknameInstead && contact.nickname.isNotEmpty()) contact.nickname else contact.getNameToDisplay()
                 val character = if (name.isNotEmpty()) name.substring(0, 1) else ""
                 FastScrollItemIndicator.Text(character.normalizeString().uppercase(Locale.getDefault()))
             } catch (e: Exception) {

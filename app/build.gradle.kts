@@ -5,6 +5,7 @@ import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.android)
+    alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
 }
@@ -22,11 +23,6 @@ fun hasSigningVars(): Boolean {
             && providers.environmentVariable("SIGNING_STORE_PASSWORD").orNull != null
 }
 
-base {
-    val versionCode = project.property("VERSION_CODE").toString().toInt()
-    archivesName = "contacts-$versionCode"
-}
-
 android {
     compileSdk = project.libs.versions.app.build.compileSDKVersion.get().toInt()
 
@@ -36,6 +32,7 @@ android {
         targetSdk = project.libs.versions.app.build.targetSDK.get().toInt()
         versionName = project.property("VERSION_NAME").toString()
         versionCode = project.property("VERSION_CODE").toString().toInt()
+        setProperty("archivesBaseName", "contacts-$versionCode")
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
         }
@@ -74,7 +71,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
+                getDefaultProguardFile("proguard-android.txt"),
                 "proguard-rules.pro"
             )
             if (keystorePropertiesFile.exists() || hasSigningVars()) {
@@ -91,7 +88,7 @@ android {
     }
 
     sourceSets {
-        getByName("main").java.directories.add("src/main/kotlin")
+        getByName("main").java.srcDirs("src/main/kotlin")
     }
 
     compileOptions {

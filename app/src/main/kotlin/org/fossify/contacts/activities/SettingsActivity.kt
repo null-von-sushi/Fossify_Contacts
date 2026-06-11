@@ -54,6 +54,7 @@ class SettingsActivity : SimpleActivity() {
         setupEnableNumberFormatting()
         setupShowContactsWithNumbers()
         setupStartNameWithSurname()
+        setupShowNicknameInstead()
         setupMergeDuplicateContacts()
         setupShowCallConfirmation()
         setupShowDialpadButton()
@@ -194,6 +195,14 @@ class SettingsActivity : SimpleActivity() {
         binding.settingsStartNameWithSurnameHolder.setOnClickListener {
             binding.settingsStartNameWithSurname.toggle()
             config.startNameWithSurname = binding.settingsStartNameWithSurname.isChecked
+        }
+    }
+
+    private fun setupShowNicknameInstead() {
+        binding.settingsShowNicknameInstead.isChecked = config.showNicknameInstead
+        binding.settingsShowNicknameInsteadHolder.setOnClickListener {
+            binding.settingsShowNicknameInstead.toggle()
+            config.showNicknameInstead = binding.settingsShowNicknameInstead.isChecked
         }
     }
 

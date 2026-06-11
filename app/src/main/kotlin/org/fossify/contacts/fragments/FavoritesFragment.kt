@@ -105,6 +105,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) : MyViewPa
         } else {
             currAdapter.apply {
                 startNameWithSurname = context.config.startNameWithSurname
+                showNicknameInstead = context.config.showNicknameInstead
                 showPhoneNumbers = context.config.showPhoneNumbers
                 showContactThumbnails = context.config.showContactThumbnails
                 this.viewType = viewType

@@ -126,7 +126,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
         }
 
         allContacts = contacts
-        val filtered = when (this) {
+        var filtered = when (this) {
             is GroupsFragment -> contacts
             is FavoritesFragment -> {
                 val contactSources = activity!!.getVisibleContactSources()
@@ -143,6 +143,18 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
             else -> {
                 val contactSources = activity!!.getVisibleContactSources()
                 contacts.filter { contactSources.contains(it.source) }
+            }
+        }
+
+        if (config.showNicknameInstead && this !is GroupsFragment && !activity!!.config.isCustomOrderSelected) {
+            val sorting = config.sorting
+            filtered = filtered.sortedWith(compareBy {
+                val name = if (it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                name.lowercase(Locale.getDefault()).normalizeString()
+            })
+
+            if (sorting and SORT_DESCENDING != 0) {
+                filtered = filtered.reversed()
             }
         }
 
@@ -263,12 +275,23 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
         }
     }
 
+    fun showNicknameInsteadChanged(showNickname: Boolean) {
+        if (this !is GroupsFragment) {
+            (innerBinding.fragmentList.adapter as? ContactsAdapter)?.apply {
+                showNicknameInstead = showNickname
+                skipHashComparing = true
+                (activity as? MainActivity)?.refreshContacts(TAB_CONTACTS or TAB_FAVORITES)
+            }
+        }
+    }
+
     fun setupLetterFastscroller(contacts: List<Contact>) {
         val sorting = context.config.sorting
         innerBinding.letterFastscroller?.setupWithRecyclerView(innerBinding.fragmentList, { position ->
             try {
                 val contact = contacts[position]
                 var name = when {
+                    context.config.showNicknameInstead && contact.nickname.isNotEmpty() -> contact.nickname
                     contact.isABusinessContact() -> contact.getFullCompany()
                     sorting and SORT_BY_SURNAME != 0 && contact.surname.isNotEmpty() -> contact.surname
                     sorting and SORT_BY_MIDDLE_NAME != 0 && contact.middleName.isNotEmpty() -> contact.middleName
@@ -313,7 +336,8 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
         if (adapter is ContactsAdapter) {
             val shouldNormalize = fixedText.normalizeString() == fixedText
             val filtered = contactsIgnoringSearch.filter {
-                getProperText(it.getNameToDisplay(), shouldNormalize).contains(fixedText, true) ||
+                val nameToDisplay = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
+                getProperText(nameToDisplay, shouldNormalize).contains(fixedText, true) ||
                     getProperText(it.nickname, shouldNormalize).contains(fixedText, true) ||
                     (fixedText.toLongOrNull() != null && it.phoneNumbers.any {
                         fixedText.normalizePhoneNumber().isNotEmpty() && it.normalizedNumber.contains(fixedText.normalizePhoneNumber(), true)
@@ -328,7 +352,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
             } as ArrayList
 
             filtered.sortBy {
-                val nameToDisplay = it.getNameToDisplay()
+                val nameToDisplay = if (config.showNicknameInstead && it.nickname.isNotEmpty()) it.nickname else it.getNameToDisplay()
                 !getProperText(nameToDisplay, shouldNormalize).startsWith(fixedText, true) && !nameToDisplay.contains(fixedText, true)
             }
 

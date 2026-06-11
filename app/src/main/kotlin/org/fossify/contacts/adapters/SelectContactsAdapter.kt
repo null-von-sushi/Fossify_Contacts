@@ -97,7 +97,7 @@ class SelectContactsAdapter(
                 contactCheckbox.setColors(root.context.getProperTextColor(), root.context.getProperPrimaryColor(), root.context.getProperBackgroundColor())
                 val textColor = root.context.getProperTextColor()
 
-                val fullName = contact.getNameToDisplay()
+                val fullName = if (config.showNicknameInstead && contact.nickname.isNotEmpty()) contact.nickname else contact.getNameToDisplay()
                 contactName.text = if (textToHighlight.isEmpty()) fullName else {
                     if (fullName.contains(textToHighlight, true)) {
                         fullName.highlightTextPart(textToHighlight, adjustedPrimaryColor)
@@ -134,6 +134,7 @@ class SelectContactsAdapter(
 
                 if (showContactThumbnails) {
                     val avatarName = when {
+                        config.showNicknameInstead && contact.nickname.isNotEmpty() -> contact.nickname
                         contact.isABusinessContact() -> contact.getFullCompany()
                         config.startNameWithSurname -> contact.surname
                         else -> contact.firstName

@@ -75,6 +75,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) : MyViewPag
         } else {
             (currAdapter as ContactsAdapter).apply {
                 startNameWithSurname = context.config.startNameWithSurname
+                showNicknameInstead = context.config.showNicknameInstead
                 showPhoneNumbers = context.config.showPhoneNumbers
                 showContactThumbnails = context.config.showContactThumbnails
                 updateItems(contacts)

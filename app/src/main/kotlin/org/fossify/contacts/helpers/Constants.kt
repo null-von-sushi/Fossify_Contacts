@@ -12,6 +12,7 @@ const val DEFAULT_FILE_NAME = "contacts.vcf"
 const val AVOID_CHANGING_TEXT_TAG = "avoid_changing_text_tag"
 const val AVOID_CHANGING_VISIBILITY_TAG = "avoid_changing_visibility_tag"
 const val FORMAT_PHONE_NUMBERS = "format_phone_numbers"
+const val SHOW_NICKNAME_INSTEAD = "show_nickname_instead"
 
 const val AUTOMATIC_BACKUP_REQUEST_CODE = 10001
 const val AUTO_BACKUP_INTERVAL_IN_DAYS = 1

@@ -48,6 +48,7 @@
 
     <!-- Settings -->
     <string name="show_phone_numbers">Show phone numbers</string>
+    <string name="show_nickname_instead">Show nickname instead of name, if available</string>
     <string name="show_contact_thumbnails">Show contact thumbnails</string>
     <string name="format_phone_numbers">Format phone numbers</string>
     <string name="show_dialpad_button">Show a dialpad button on the main screen</string>

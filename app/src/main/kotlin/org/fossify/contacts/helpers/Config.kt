@@ -18,4 +18,8 @@ class Config(context: Context) : BaseConfig(context) {
         set(autoBackupContactSources) = prefs.edit().remove(AUTO_BACKUP_CONTACT_SOURCES).putStringSet(AUTO_BACKUP_CONTACT_SOURCES, autoBackupContactSources)
             .apply()
 
+    var showNicknameInstead: Boolean
+        get() = prefs.getBoolean(SHOW_NICKNAME_INSTEAD, false)
+        set(showNicknameInstead) = prefs.edit().putBoolean(SHOW_NICKNAME_INSTEAD, showNicknameInstead).apply()
+
 }

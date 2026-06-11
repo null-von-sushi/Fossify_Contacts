@@ -69,6 +69,7 @@ class ContactsAdapter(
     private var textToHighlight = highlightText
 
     var startNameWithSurname = config.startNameWithSurname
+    var showNicknameInstead = config.showNicknameInstead
     var showContactThumbnails = config.showContactThumbnails
     var showPhoneNumbers = config.showPhoneNumbers
     var fontSize = activity.getTextSize()
@@ -200,7 +201,9 @@ class ContactsAdapter(
     private fun askConfirmDelete() {
         val itemsCnt = selectedKeys.size
         val items = if (itemsCnt == 1) {
-            "\"${getSelectedItems().first().getNameToDisplay()}\""
+            val contact = getSelectedItems().first()
+            val name = if (showNicknameInstead && contact.nickname.isNotEmpty()) contact.nickname else contact.getNameToDisplay()
+            "\"$name\""
         } else {
             resources.getQuantityString(org.fossify.commons.R.plurals.delete_contacts, itemsCnt, itemsCnt)
         }
@@ -326,8 +329,9 @@ class ContactsAdapter(
                 intent.putExtra(IS_PRIVATE, contact.isPrivate())
                 intent.flags = intent.flags or Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NO_HISTORY
 
+                val name = if (showNicknameInstead && contact.nickname.isNotEmpty()) contact.nickname else contact.getNameToDisplay()
                 val shortcut = ShortcutInfo.Builder(activity, contact.hashCode().toString())
-                    .setShortLabel(contact.getNameToDisplay())
+                    .setShortLabel(name)
                     .setIcon(Icon.createWithBitmap(drawable.convertToBitmap()))
                     .setIntent(intent)
                     .build()
@@ -340,7 +344,8 @@ class ContactsAdapter(
     private fun getShortcutImage(contact: Contact, drawable: Drawable, callback: () -> Unit) {
         val appIconColor = baseConfig.appIconColor
         (drawable as LayerDrawable).findDrawableByLayerId(R.id.shortcut_contact_background).applyColorFilter(appIconColor)
-        val placeholderImage = BitmapDrawable(resources, SimpleContactsHelper(activity).getContactLetterIcon(contact.getNameToDisplay()))
+        val name = if (showNicknameInstead && contact.nickname.isNotEmpty()) contact.nickname else contact.getNameToDisplay()
+        val placeholderImage = BitmapDrawable(resources, SimpleContactsHelper(activity).getContactLetterIcon(name))
         if (contact.photoUri.isEmpty() && contact.photo == null) {
             drawable.setDrawableByLayerId(R.id.shortcut_contact_image, placeholderImage)
             callback()
@@ -387,7 +392,12 @@ class ContactsAdapter(
         view.apply {
             setupViewBackground(activity)
             findViewById<ConstraintLayout>(org.fossify.commons.R.id.item_contact_frame)?.isSelected = selectedKeys.contains(contact.id)
-            val fullName = contact.getNameToDisplay()
+            val fullName = if (showNicknameInstead && contact.nickname.isNotEmpty()) {
+                contact.nickname
+            } else {
+                contact.getNameToDisplay()
+            }
+
             findViewById<TextView>(org.fossify.commons.R.id.item_contact_name).text = if (textToHighlight.isEmpty()) fullName else {
                 val normalizedFullName = fullName.normalizeString()
                 val normalizedSearchText = textToHighlight.normalizeString()
@@ -483,7 +493,16 @@ class ContactsAdapter(
         }
     }
 
-    override fun onChange(position: Int) = contactItems.getOrNull(position)?.getBubbleText() ?: ""
+    override fun onChange(position: Int): String {
+        val contact = contactItems.getOrNull(position) ?: return ""
+        val name = if (showNicknameInstead && contact.nickname.isNotEmpty()) {
+            contact.nickname
+        } else {
+            contact.getNameToDisplay()
+        }
+
+        return if (name.isNotEmpty()) name.substring(0, 1).uppercase() else ""
+    }
 
     override fun onRowMoved(fromPosition: Int, toPosition: Int) {
         activity.config.isCustomOrderSelected = true

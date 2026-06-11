@@ -42,6 +42,7 @@ class MainActivity : SimpleActivity(), RefreshContactsListener {
     private var isGettingContacts = false
 
     private var storedShowContactThumbnails = false
+    private var storedShowNicknameInstead = false
     private var storedShowPhoneNumbers = false
     private var storedStartNameWithSurname = false
     private var storedFontSize = 0
@@ -99,6 +100,13 @@ class MainActivity : SimpleActivity(), RefreshContactsListener {
         if (storedShowContactThumbnails != configShowContactThumbnails) {
             getAllFragments().forEach {
                 it?.showContactThumbnailsChanged(configShowContactThumbnails)
+            }
+        }
+
+        val configShowNicknameInstead = config.showNicknameInstead
+        if (storedShowNicknameInstead != configShowNicknameInstead) {
+            getAllFragments().forEach {
+                it?.showNicknameInsteadChanged(configShowNicknameInstead)
             }
         }
 
@@ -240,6 +248,7 @@ class MainActivity : SimpleActivity(), RefreshContactsListener {
     private fun storeStateVariables() {
         config.apply {
             storedShowContactThumbnails = showContactThumbnails
+            storedShowNicknameInstead = showNicknameInstead
             storedShowPhoneNumbers = showPhoneNumbers
             storedStartNameWithSurname = startNameWithSurname
             storedShowTabs = showTabs
