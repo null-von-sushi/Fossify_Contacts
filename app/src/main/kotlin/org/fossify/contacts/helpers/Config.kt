@@ -22,4 +22,8 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(SHOW_NICKNAME_INSTEAD, false)
         set(showNicknameInstead) = prefs.edit().putBoolean(SHOW_NICKNAME_INSTEAD, showNicknameInstead).apply()
 
+    var showNicknameMeOnTop: Boolean
+        get() = prefs.getBoolean(SHOW_NICKNAME_ME_ON_TOP, false)
+        set(showNicknameMeOnTop) = prefs.edit().putBoolean(SHOW_NICKNAME_ME_ON_TOP, showNicknameMeOnTop).apply()
+
 }

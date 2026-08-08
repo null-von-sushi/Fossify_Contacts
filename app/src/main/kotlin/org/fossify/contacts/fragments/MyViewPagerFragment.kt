@@ -30,11 +30,14 @@ import org.fossify.contacts.databinding.FragmentLettersLayoutBinding
 import org.fossify.contacts.extensions.config
 import org.fossify.contacts.extensions.getProperName
 import org.fossify.contacts.extensions.getSortKey
+import org.fossify.contacts.extensions.isMeNickname
 import org.fossify.contacts.helpers.AVOID_CHANGING_TEXT_TAG
 import org.fossify.contacts.helpers.AVOID_CHANGING_VISIBILITY_TAG
 import org.fossify.contacts.helpers.Config
 import org.fossify.contacts.helpers.GROUP
+import org.fossify.contacts.helpers.HanziHelper
 import org.fossify.contacts.interfaces.RefreshContactsListener
+import kotlinx.coroutines.runBlocking
 import java.util.Locale
 
 abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(context: Context, attributeSet: AttributeSet) :
@@ -50,6 +53,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
 
     var skipHashComparing = false
     var forceListRedraw = false
+    private var isProcessingHanzi = false
 
     fun setupFragment(activity: SimpleActivity) {
         config = activity.config
@@ -128,12 +132,21 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                 config.lastUsedContactSource = grouped?.key ?: ""
             }
 
+            runBlocking {
+                HanziHelper.initCache(context)
+            }
+
             allContacts = contacts
+            val (ready, pending) = contacts.partition {
+                val name = it.getProperName(config)
+                HanziHelper.isHanziReady(name)
+            }
+
             var filtered = when (this) {
                 is GroupsFragment -> contacts
                 is FavoritesFragment -> {
                     val contactSources = activity!!.getVisibleContactSources()
-                    val favouriteContacts = contacts
+                    val favouriteContacts = ready
                         .filter { it.starred == 1 && contactSources.contains(it.source) }
 
                     if (activity!!.config.isCustomOrderSelected) {
@@ -145,12 +158,13 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
 
                 else -> {
                     val contactSources = activity!!.getVisibleContactSources()
-                    contacts.filter { contactSources.contains(it.source) }
+                    ready.filter { contactSources.contains(it.source) }
                 }
             }
 
             if (this !is GroupsFragment && !activity!!.config.isCustomOrderSelected) {
                 val sorting = config.sorting
+                val showMeOnTop = config.showNicknameMeOnTop
                 filtered = filtered.sortedWith(compareBy {
                     val name = it.getProperName(config)
                     name.getSortKey(context)
@@ -158,6 +172,11 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
 
                 if (sorting and SORT_DESCENDING != 0) {
                     filtered = filtered.reversed()
+                }
+
+                if (showMeOnTop) {
+                    val (meContacts, otherContacts) = filtered.partition { it.isMeNickname() }
+                    filtered = meContacts + otherContacts
                 }
             }
 
@@ -177,6 +196,22 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                         innerBinding.fragmentPlaceholder.tag = AVOID_CHANGING_TEXT_TAG
                         innerBinding.fragmentPlaceholder2.beGone()
                         innerBinding.fragmentPlaceholder2.tag = AVOID_CHANGING_VISIBILITY_TAG
+                    }
+                }
+            }
+
+            if (pending.isNotEmpty() && !isProcessingHanzi) {
+                isProcessingHanzi = true
+                ensureBackgroundThread {
+                    runBlocking {
+                        pending.forEach {
+                            val name = it.getProperName(config)
+                            HanziHelper.processHanzi(name, context)
+                        }
+                    }
+                    isProcessingHanzi = false
+                    activity?.runOnUiThread {
+                        refreshContacts(contacts, placeholderText)
                     }
                 }
             }

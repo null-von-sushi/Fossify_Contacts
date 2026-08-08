@@ -11,6 +11,7 @@ import org.fossify.contacts.databinding.DialogSelectContactBinding
 import org.fossify.contacts.extensions.config
 import org.fossify.contacts.extensions.getProperName
 import org.fossify.contacts.extensions.getSortKey
+import org.fossify.contacts.extensions.isMeNickname
 import java.util.Locale
 
 class SelectContactsDialog(
@@ -33,6 +34,7 @@ class SelectContactsDialog(
                 }
 
                 val sorting = activity.config.sorting
+                val showMeOnTop = activity.config.showNicknameMeOnTop
                 allContacts = allContacts.sortedWith(compareBy {
                     val name = it.getProperName(activity.config)
                     name.getSortKey(activity)
@@ -40,6 +42,11 @@ class SelectContactsDialog(
 
                 if (sorting and SORT_DESCENDING != 0) {
                     allContacts.reverse()
+                }
+
+                if (showMeOnTop) {
+                    val (meContacts, otherContacts) = allContacts.partition { it.isMeNickname() }
+                    allContacts = (meContacts + otherContacts) as ArrayList<Contact>
                 }
 
                 initiallySelectedContacts = allContacts.filter { it.starred == 1 } as ArrayList<Contact>

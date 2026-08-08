@@ -384,6 +384,21 @@
 
             </RelativeLayout>
 
+            <RelativeLayout
+                android:id="@+id/settings_show_nickname_me_on_top_holder"
+                style="@style/SettingsHolderSwitchStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyMaterialSwitch
+                    android:id="@+id/settings_show_nickname_me_on_top"
+                    style="@style/SettingsSwitchStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/show_nickname_me_on_top" />
+
+            </RelativeLayout>
+
             <include
                 android:id="@+id/settings_tasks_divider"
                 layout="@layout/divider" />

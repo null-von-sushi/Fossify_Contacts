@@ -43,6 +43,7 @@ class MainActivity : SimpleActivity(), RefreshContactsListener {
 
     private var storedShowContactThumbnails = false
     private var storedShowNicknameInstead = false
+    private var storedShowNicknameMeOnTop = false
     private var storedShowPhoneNumbers = false
     private var storedStartNameWithSurname = false
     private var storedFontSize = 0
@@ -108,6 +109,11 @@ class MainActivity : SimpleActivity(), RefreshContactsListener {
             getAllFragments().forEach {
                 it?.showNicknameInsteadChanged(configShowNicknameInstead)
             }
+        }
+
+        val configShowNicknameMeOnTop = config.showNicknameMeOnTop
+        if (storedShowNicknameMeOnTop != configShowNicknameMeOnTop) {
+            refreshContacts(ALL_TABS_MASK)
         }
 
         val properPrimaryColor = getProperPrimaryColor()
@@ -249,6 +255,7 @@ class MainActivity : SimpleActivity(), RefreshContactsListener {
         config.apply {
             storedShowContactThumbnails = showContactThumbnails
             storedShowNicknameInstead = showNicknameInstead
+            storedShowNicknameMeOnTop = showNicknameMeOnTop
             storedShowPhoneNumbers = showPhoneNumbers
             storedStartNameWithSurname = startNameWithSurname
             storedShowTabs = showTabs

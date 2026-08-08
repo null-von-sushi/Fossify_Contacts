@@ -20,19 +20,23 @@ import org.fossify.contacts.dialogs.SelectContactsDialog
 import org.fossify.contacts.extensions.config
 import org.fossify.contacts.extensions.getProperName
 import org.fossify.contacts.extensions.getSortKey
+import org.fossify.contacts.extensions.isMeNickname
 import org.fossify.contacts.extensions.handleGenericContactClick
 import org.fossify.contacts.extensions.viewContact
 import org.fossify.contacts.helpers.GROUP
+import org.fossify.contacts.helpers.HanziHelper
 import org.fossify.contacts.helpers.LOCATION_GROUP_CONTACTS
 import org.fossify.contacts.interfaces.RefreshContactsListener
 import org.fossify.contacts.interfaces.RemoveFromGroupListener
 import org.fossify.commons.helpers.*
+import kotlinx.coroutines.runBlocking
 import java.util.Locale
 
 class GroupContactsActivity : SimpleActivity(), RemoveFromGroupListener, RefreshContactsListener {
     private var allContacts = ArrayList<Contact>()
     private var groupContacts = ArrayList<Contact>()
     private var wasInit = false
+    private var isProcessingHanzi = false
     private val binding by viewBinding(ActivityGroupContactsBinding::inflate)
     lateinit var group: Group
 
@@ -116,12 +120,22 @@ class GroupContactsActivity : SimpleActivity(), RemoveFromGroupListener, Refresh
     private fun refreshContacts() {
         ContactsHelper(this).getContacts {
             ensureBackgroundThread {
+                runBlocking {
+                    HanziHelper.initCache(this@GroupContactsActivity)
+                }
+
                 wasInit = true
                 allContacts = it
 
-                var filtered = it.filter { it.groups.map { it.id }.contains(group.id) } as ArrayList<Contact>
+                val groupContactsFiltered = it.filter { it.groups.map { it.id }.contains(group.id) }
+                val (ready, pending) = groupContactsFiltered.partition {
+                    val name = it.getProperName(config)
+                    HanziHelper.isHanziReady(name)
+                }
+
                 val sorting = config.sorting
-                filtered = filtered.sortedWith(compareBy {
+                val showMeOnTop = config.showNicknameMeOnTop
+                var filtered = ready.sortedWith(compareBy {
                     val name = it.getProperName(config)
                     name.getSortKey(this@GroupContactsActivity)
                 }).toMutableList() as ArrayList<Contact>
@@ -130,12 +144,33 @@ class GroupContactsActivity : SimpleActivity(), RemoveFromGroupListener, Refresh
                     filtered.reverse()
                 }
 
+                if (showMeOnTop) {
+                    val (meContacts, otherContacts) = filtered.partition { it.isMeNickname() }
+                    filtered = (meContacts + otherContacts) as ArrayList<Contact>
+                }
+
                 runOnUiThread {
                     groupContacts = filtered
                     binding.groupContactsPlaceholder2.beVisibleIf(groupContacts.isEmpty())
                     binding.groupContactsPlaceholder.beVisibleIf(groupContacts.isEmpty())
                     binding.groupContactsFastscroller.beVisibleIf(groupContacts.isNotEmpty())
                     updateContacts(groupContacts)
+                }
+
+                if (pending.isNotEmpty() && !isProcessingHanzi) {
+                    isProcessingHanzi = true
+                    ensureBackgroundThread {
+                        runBlocking {
+                            pending.forEach {
+                                val name = it.getProperName(config)
+                                HanziHelper.processHanzi(name, this@GroupContactsActivity)
+                            }
+                        }
+                        isProcessingHanzi = false
+                        runOnUiThread {
+                            refreshContacts()
+                        }
+                    }
                 }
             }
         }
