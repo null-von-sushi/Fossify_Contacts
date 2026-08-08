@@ -47,7 +47,6 @@ import org.fossify.commons.extensions.getPhoneNumberTypeText
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.extensions.getPublicContactSource
-import org.fossify.commons.extensions.getVisibleContactSources
 import org.fossify.commons.extensions.hasContactPermissions
 import org.fossify.commons.extensions.hideKeyboard
 import org.fossify.commons.extensions.isVisible
@@ -124,6 +123,7 @@ import org.fossify.contacts.dialogs.MyDatePickerDialog
 import org.fossify.contacts.dialogs.SelectGroupsDialog
 import org.fossify.contacts.extensions.config
 import org.fossify.contacts.extensions.getCachePhotoUri
+import org.fossify.contacts.extensions.getDuplicateContacts
 import org.fossify.contacts.extensions.showContactSourcePicker
 import org.fossify.contacts.helpers.ADD_NEW_CONTACT_NUMBER
 import org.fossify.contacts.helpers.IS_FROM_SIMPLE_CONTACTS
@@ -1429,27 +1429,23 @@ class EditContactActivity : ContactActivity() {
     ) {
         val contactsHelper = ContactsHelper(this)
 
-        contactsHelper.getDuplicatesOfContact(contact!!, false) { contacts ->
+        getDuplicateContacts(contact!!, false) { contacts ->
             ensureBackgroundThread {
-                val displayContactSources = getVisibleContactSources()
-                contacts.filter { displayContactSources.contains(it.source) }.forEach { contact ->
-                    val duplicate = contactsHelper.getContactWithId(contact.id, contact.isPrivate())
-                    if (duplicate != null) {
-                        if (primaryStatus == PrimaryNumberStatus.UNSTARRED) {
-                            val number = duplicate.phoneNumbers.find { it.normalizedNumber == toggleState.first!!.normalizedNumber }
-                            number?.isPrimary = false
-                        } else if (primaryStatus == PrimaryNumberStatus.STARRED) {
-                            val number = duplicate.phoneNumbers.find { it.normalizedNumber == toggleState.second!!.normalizedNumber }
-                            if (number != null) {
-                                duplicate.phoneNumbers.forEach {
-                                    it.isPrimary = false
-                                }
-                                number.isPrimary = true
+                contacts.forEach { contact ->
+                    if (primaryStatus == PrimaryNumberStatus.UNSTARRED) {
+                        val number = contact.phoneNumbers.find { it.normalizedNumber == toggleState.first!!.normalizedNumber }
+                        number?.isPrimary = false
+                    } else if (primaryStatus == PrimaryNumberStatus.STARRED) {
+                        val number = contact.phoneNumbers.find { it.normalizedNumber == toggleState.second!!.normalizedNumber }
+                        if (number != null) {
+                            contact.phoneNumbers.forEach {
+                                it.isPrimary = false
                             }
+                            number.isPrimary = true
                         }
-
-                        contactsHelper.updateContact(duplicate, PHOTO_UNCHANGED)
                     }
+
+                    contactsHelper.updateContact(contact, PHOTO_UNCHANGED)
                 }
 
                 runOnUiThread {

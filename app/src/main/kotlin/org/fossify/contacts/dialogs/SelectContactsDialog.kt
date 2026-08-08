@@ -12,6 +12,7 @@ import org.fossify.contacts.extensions.config
 import org.fossify.contacts.extensions.getProperName
 import org.fossify.contacts.extensions.getSortKey
 import org.fossify.contacts.extensions.isMeNickname
+import org.fossify.contacts.helpers.MeNicknameHelper
 import java.util.Locale
 
 class SelectContactsDialog(
@@ -24,7 +25,7 @@ class SelectContactsDialog(
 
     init {
         ensureBackgroundThread {
-            var allContacts = initialContacts
+            var allContacts = MeNicknameHelper.mergeMeContacts(activity, initialContacts)
             if (selectContacts == null) {
                 val contactSources = activity.getVisibleContactSources()
                 allContacts = allContacts.filter { contactSources.contains(it.source) } as ArrayList<Contact>
@@ -45,7 +46,7 @@ class SelectContactsDialog(
                 }
 
                 if (showMeOnTop) {
-                    val (meContacts, otherContacts) = allContacts.partition { it.isMeNickname(activity) }
+                    val (meContacts, otherContacts) = allContacts.partition { it.isMeNickname() }
                     allContacts = (meContacts + otherContacts) as ArrayList<Contact>
                 }
 

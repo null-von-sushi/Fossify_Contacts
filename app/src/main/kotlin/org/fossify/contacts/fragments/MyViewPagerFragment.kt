@@ -175,7 +175,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                 }
 
                 if (showMeOnTop) {
-                    val (meContacts, otherContacts) = filtered.partition { it.isMeNickname(context) }
+                    val (meContacts, otherContacts) = filtered.partition { it.isMeNickname() }
                     filtered = meContacts + otherContacts
                 }
             }

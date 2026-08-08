@@ -32,6 +32,7 @@ import org.fossify.contacts.extensions.tryImportContactsFromFile
 import org.fossify.contacts.fragments.FavoritesFragment
 import org.fossify.contacts.fragments.MyViewPagerFragment
 import org.fossify.contacts.helpers.ALL_TABS_MASK
+import org.fossify.contacts.helpers.MeNicknameHelper
 import org.fossify.contacts.helpers.tabsList
 import org.fossify.contacts.interfaces.RefreshContactsListener
 import java.util.Arrays
@@ -57,6 +58,7 @@ class MainActivity : SimpleActivity(), RefreshContactsListener {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         appLaunched(BuildConfig.APPLICATION_ID)
+        MeNicknameHelper.init(this)
         setupOptionsMenu()
         refreshMenuItems()
         setupEdgeToEdge(
@@ -508,17 +510,19 @@ class MainActivity : SimpleActivity(), RefreshContactsListener {
                 return@getContacts
             }
 
+            val mergedContacts = MeNicknameHelper.mergeMeContacts(this@MainActivity, contacts)
+
             if (refreshTabsMask and TAB_CONTACTS != 0) {
                 findViewById<MyViewPagerFragment<*>>(R.id.contacts_fragment)?.apply {
                     skipHashComparing = true
-                    refreshContacts(contacts)
+                    refreshContacts(mergedContacts)
                 }
             }
 
             if (refreshTabsMask and TAB_FAVORITES != 0) {
                 findViewById<MyViewPagerFragment<*>>(R.id.favorites_fragment)?.apply {
                     skipHashComparing = true
-                    refreshContacts(contacts)
+                    refreshContacts(mergedContacts)
                 }
             }
 
@@ -527,7 +531,7 @@ class MainActivity : SimpleActivity(), RefreshContactsListener {
                     if (refreshTabsMask == TAB_GROUPS) {
                         skipHashComparing = true
                     }
-                    refreshContacts(contacts)
+                    refreshContacts(mergedContacts)
                 }
             }
 

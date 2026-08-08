@@ -164,16 +164,41 @@ fun Activity.getDuplicateContacts(contact: Contact, includeCurrent: Boolean, cal
     if (includeCurrent) {
         duplicateContacts.add(contact)
     }
+
+    val isMe = contact.isMeNickname()
+    val displayContactSources = getVisibleContactSources()
+
     ContactsHelper(this).getDuplicatesOfContact(contact, false) { contacts ->
         ensureBackgroundThread {
-            val displayContactSources = getVisibleContactSources()
+            val resultIds = mutableSetOf<Int>()
+            if (includeCurrent) resultIds.add(contact.id)
+
             contacts.filter { displayContactSources.contains(it.source) }.forEach {
-                val duplicate = ContactsHelper(this).getContactWithId(it.id, it.isPrivate())
-                if (duplicate != null) {
-                    duplicateContacts.add(duplicate)
+                if (!resultIds.contains(it.id)) {
+                    val duplicate = ContactsHelper(this).getContactWithId(it.id, it.isPrivate())
+                    if (duplicate != null) {
+                        duplicateContacts.add(duplicate)
+                        resultIds.add(it.id)
+                    }
                 }
             }
-            callback(duplicateContacts)
+
+            if (isMe) {
+                ContactsHelper(this).getContacts(true) { allContacts ->
+                    ensureBackgroundThread {
+                        allContacts.filter { it.isMeNickname() && !resultIds.contains(it.id) && displayContactSources.contains(it.source) }.forEach {
+                            val duplicate = ContactsHelper(this).getContactWithId(it.id, it.isPrivate())
+                            if (duplicate != null) {
+                                duplicateContacts.add(duplicate)
+                                resultIds.add(it.id)
+                            }
+                        }
+                        callback(duplicateContacts)
+                    }
+                }
+            } else {
+                callback(duplicateContacts)
+            }
         }
     }
 }

@@ -25,6 +25,7 @@ import org.fossify.contacts.extensions.handleGenericContactClick
 import org.fossify.contacts.extensions.viewContact
 import org.fossify.contacts.helpers.GROUP
 import org.fossify.contacts.helpers.HanziHelper
+import org.fossify.contacts.helpers.MeNicknameHelper
 import org.fossify.contacts.helpers.LOCATION_GROUP_CONTACTS
 import org.fossify.contacts.interfaces.RefreshContactsListener
 import org.fossify.contacts.interfaces.RemoveFromGroupListener
@@ -125,9 +126,9 @@ class GroupContactsActivity : SimpleActivity(), RemoveFromGroupListener, Refresh
                 }
 
                 wasInit = true
-                allContacts = it
+                allContacts = MeNicknameHelper.mergeMeContacts(this@GroupContactsActivity, it)
 
-                val groupContactsFiltered = it.filter { it.groups.map { it.id }.contains(group.id) }
+                val groupContactsFiltered = allContacts.filter { it.groups.map { it.id }.contains(group.id) }
                 val (ready, pending) = groupContactsFiltered.partition {
                     val name = it.getProperName(config)
                     HanziHelper.isHanziReady(name)
@@ -145,7 +146,7 @@ class GroupContactsActivity : SimpleActivity(), RemoveFromGroupListener, Refresh
                 }
 
                 if (showMeOnTop) {
-                    val (meContacts, otherContacts) = filtered.partition { it.isMeNickname(this@GroupContactsActivity) }
+                    val (meContacts, otherContacts) = filtered.partition { it.isMeNickname() }
                     filtered = (meContacts + otherContacts) as ArrayList<Contact>
                 }
 

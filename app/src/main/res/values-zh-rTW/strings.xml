@@ -85,4 +85,5 @@
     <string name="structured_addresses">結構化地址（編輯模式）</string>
     <string name="show_nickname_instead">有暱稱時顯示暱稱而非姓名</string>
     <string name="me_nickname_regex">我</string>
+    <string name="me_canonical">我</string>
 </resources>

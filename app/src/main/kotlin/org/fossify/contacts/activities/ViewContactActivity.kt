@@ -39,7 +39,7 @@ class ViewContactActivity : ContactActivity() {
     private var showFields = 0
     private var fullContact: Contact? = null    // contact with all fields filled from duplicates
     private var duplicateInitialized = false
-    private val mergeDuplicate: Boolean get() = config.mergeDuplicateContacts
+    private val mergeDuplicate: Boolean get() = config.mergeDuplicateContacts || contact?.isMeNickname() == true
     private val binding by viewBinding(ActivityViewContactBinding::inflate)
 
     companion object {
@@ -287,7 +287,7 @@ class ViewContactActivity : ContactActivity() {
         if (editExactContact) {
             editContact(contact)
         } else {
-            editContact(contact, config.mergeDuplicateContacts)
+            editContact(contact, mergeDuplicate)
         }
     }
 
@@ -420,10 +420,19 @@ class ViewContactActivity : ContactActivity() {
         }
     }
 
-    // a contact cannot have different emails per contact source. Such contacts are handled as separate ones, not duplicates of each other
     private fun setupEmails() {
         binding.contactEmailsHolder.removeAllViews()
-        val emails = contact!!.emails
+        var emails = contact!!.emails.toMutableSet() as LinkedHashSet<Email>
+
+        if (mergeDuplicate) {
+            duplicateContacts.forEach {
+                emails.addAll(it.emails)
+            }
+        }
+
+        emails = emails.sortedBy { it.type }.toMutableSet() as LinkedHashSet<Email>
+        fullContact!!.emails = emails.toMutableList() as ArrayList<Email>
+
         if (emails.isNotEmpty() && showFields and SHOW_EMAILS_FIELD != 0) {
             emails.forEach {
                 ItemViewEmailBinding.inflate(layoutInflater, binding.contactEmailsHolder, false).apply {
@@ -683,7 +692,16 @@ class ViewContactActivity : ContactActivity() {
     }
 
     private fun setupNotes() {
-        val notes = contact!!.notes
+        var notes = contact!!.notes
+        if (mergeDuplicate) {
+            duplicateContacts.forEach {
+                if (it.notes.isNotEmpty() && !notes.contains(it.notes)) {
+                    notes = if (notes.isEmpty()) it.notes else "$notes\n${it.notes}"
+                }
+            }
+        }
+
+        fullContact!!.notes = notes
         if (notes.isNotEmpty() && showFields and SHOW_NOTES_FIELD != 0) {
             binding.contactNotes.text = notes
             binding.contactNotesImage.beVisible()
@@ -744,7 +762,12 @@ class ViewContactActivity : ContactActivity() {
     }
 
     private fun setupOrganization() {
-        val organization = contact!!.organization
+        var organization = contact!!.organization
+        if (mergeDuplicate && organization.isEmpty()) {
+            organization = duplicateContacts.firstOrNull { !it.organization.isEmpty() }?.organization ?: organization
+        }
+
+        fullContact!!.organization = organization
         if (organization.isNotEmpty() && showFields and SHOW_ORGANIZATION_FIELD != 0) {
             binding.contactOrganizationCompany.text = organization.company
             binding.contactOrganizationJobPosition.text = organization.jobPosition
