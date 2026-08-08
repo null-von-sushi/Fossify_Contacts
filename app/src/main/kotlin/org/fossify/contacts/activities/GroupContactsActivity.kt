@@ -137,7 +137,7 @@ class GroupContactsActivity : SimpleActivity(), RemoveFromGroupListener, Refresh
                 val showMeOnTop = config.showNicknameMeOnTop
                 var filtered = ready.sortedWith(compareBy {
                     val name = it.getProperName(config)
-                    name.getSortKey(this@GroupContactsActivity)
+                    name.getSortKey()
                 }).toMutableList() as ArrayList<Contact>
 
                 if (sorting and SORT_DESCENDING != 0) {
@@ -145,7 +145,7 @@ class GroupContactsActivity : SimpleActivity(), RemoveFromGroupListener, Refresh
                 }
 
                 if (showMeOnTop) {
-                    val (meContacts, otherContacts) = filtered.partition { it.isMeNickname() }
+                    val (meContacts, otherContacts) = filtered.partition { it.isMeNickname(this@GroupContactsActivity) }
                     filtered = (meContacts + otherContacts) as ArrayList<Contact>
                 }
 

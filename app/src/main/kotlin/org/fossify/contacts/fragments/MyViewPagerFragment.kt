@@ -167,7 +167,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                 val showMeOnTop = config.showNicknameMeOnTop
                 filtered = filtered.sortedWith(compareBy {
                     val name = it.getProperName(config)
-                    name.getSortKey(context)
+                    name.getSortKey()
                 })
 
                 if (sorting and SORT_DESCENDING != 0) {
@@ -175,7 +175,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                 }
 
                 if (showMeOnTop) {
-                    val (meContacts, otherContacts) = filtered.partition { it.isMeNickname() }
+                    val (meContacts, otherContacts) = filtered.partition { it.isMeNickname(context) }
                     filtered = meContacts + otherContacts
                 }
             }
@@ -267,7 +267,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                 }
             }
 
-            storedGroups = storedGroups.asSequence().sortedWith(compareBy { it.title.getSortKey(context) })
+            storedGroups = storedGroups.asSequence().sortedWith(compareBy { it.title.getSortKey() })
                 .toMutableList() as ArrayList<Group>
 
             innerBinding.fragmentPlaceholder2.beVisibleIf(storedGroups.isEmpty())
@@ -349,7 +349,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                     name = contact.getProperName(config)
                 }
 
-                val sortKey = name.getSortKey(context)
+                val sortKey = name.getSortKey()
                 val character = if (sortKey.isNotEmpty()) sortKey.substring(0, 1) else ""
                 FastScrollItemIndicator.Text(character.uppercase(Locale.getDefault()))
             } catch (e: Exception) {
@@ -384,7 +384,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
                 val shouldNormalize = fixedText.normalizeString() == fixedText
                 val filtered = contactsIgnoringSearch.filter {
                     val nameToDisplay = it.getProperName(config)
-                    nameToDisplay.getSortKey(context).contains(fixedText, true) ||
+                    nameToDisplay.getSortKey().contains(fixedText, true) ||
                         getProperText(it.nickname, shouldNormalize).contains(fixedText, true) ||
                         (fixedText.toLongOrNull() != null && it.phoneNumbers.any {
                             fixedText.normalizePhoneNumber().isNotEmpty() && it.normalizedNumber.contains(fixedText.normalizePhoneNumber(), true)
@@ -400,7 +400,7 @@ abstract class MyViewPagerFragment<Binding : MyViewPagerFragment.InnerBinding>(c
 
                 filtered.sortBy {
                     val nameToDisplay = it.getProperName(config)
-                    val sortKey = nameToDisplay.getSortKey(context)
+                    val sortKey = nameToDisplay.getSortKey()
                     !sortKey.startsWith(fixedText, true) && !sortKey.contains(fixedText, true)
                 }
 

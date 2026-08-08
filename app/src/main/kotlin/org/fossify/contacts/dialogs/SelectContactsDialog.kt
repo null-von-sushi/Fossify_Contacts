@@ -37,7 +37,7 @@ class SelectContactsDialog(
                 val showMeOnTop = activity.config.showNicknameMeOnTop
                 allContacts = allContacts.sortedWith(compareBy {
                     val name = it.getProperName(activity.config)
-                    name.getSortKey(activity)
+                    name.getSortKey()
                 }).toMutableList() as ArrayList<Contact>
 
                 if (sorting and SORT_DESCENDING != 0) {
@@ -45,7 +45,7 @@ class SelectContactsDialog(
                 }
 
                 if (showMeOnTop) {
-                    val (meContacts, otherContacts) = allContacts.partition { it.isMeNickname() }
+                    val (meContacts, otherContacts) = allContacts.partition { it.isMeNickname(activity) }
                     allContacts = (meContacts + otherContacts) as ArrayList<Contact>
                 }
 
@@ -120,7 +120,7 @@ class SelectContactsDialog(
             try {
                 val contact = allContacts[position]
                 val name = contact.getProperName(activity.config)
-                val sortKey = name.getSortKey(activity)
+                val sortKey = name.getSortKey()
                 val character = if (sortKey.isNotEmpty()) sortKey.substring(0, 1) else ""
                 FastScrollItemIndicator.Text(character.uppercase(Locale.getDefault()))
             } catch (e: Exception) {

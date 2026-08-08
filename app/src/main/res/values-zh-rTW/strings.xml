@@ -31,6 +31,7 @@
     <string name="remove_photo">移除相片</string>
     <string name="change_photo">變更照片</string>
     <string name="show_phone_numbers">顯示電話號碼</string>
+    <string name="show_nickname_me_on_top">將「我」暱稱置頂</string>
     <string name="show_contact_thumbnails">顯示聯絡人縮圖</string>
     <string name="show_dialpad_button">在主畫面顯示撥號按鈕</string>
     <string name="manage_shown_contact_fields">管理顯示的聯絡人欄位</string>
@@ -82,4 +83,6 @@
     <string name="select_account">選取帳號</string>
     <string name="postcode">郵遞區號</string>
     <string name="structured_addresses">結構化地址（編輯模式）</string>
+    <string name="show_nickname_instead">有暱稱時顯示暱稱而非姓名</string>
+    <string name="me_nickname_regex">我</string>
 </resources>

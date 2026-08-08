@@ -495,7 +495,7 @@ class ContactsAdapter(
         val contact = contactItems.getOrNull(position) ?: return ""
         val name = contact.getProperName(config)
 
-        val sortKey = name.getSortKey(activity)
+        val sortKey = name.getSortKey()
         return if (sortKey.isNotEmpty()) sortKey.substring(0, 1).uppercase() else ""
     }
 

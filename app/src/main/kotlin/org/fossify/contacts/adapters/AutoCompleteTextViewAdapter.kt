@@ -79,7 +79,7 @@ class AutoCompleteTextViewAdapter(
                 val results = mutableListOf<Contact>()
                 contacts.forEach {
                     val nameToDisplay = it.getProperName(activity.config)
-                    if (nameToDisplay.getSortKey(activity).contains(searchString, true)) {
+                    if (nameToDisplay.getSortKey().contains(searchString, true)) {
                         results.add(it)
                     }
                 }
@@ -87,11 +87,11 @@ class AutoCompleteTextViewAdapter(
                 results.sortWith(compareBy<Contact>
                 {
                     val nameToDisplay = it.getProperName(activity.config)
-                    nameToDisplay.getSortKey(activity).startsWith(searchString, true)
+                    nameToDisplay.getSortKey().startsWith(searchString, true)
                 }.thenBy
                 {
                     val nameToDisplay = it.getProperName(activity.config)
-                    nameToDisplay.getSortKey(activity).contains(searchString, true)
+                    nameToDisplay.getSortKey().contains(searchString, true)
                 })
                 results.reverse()
 

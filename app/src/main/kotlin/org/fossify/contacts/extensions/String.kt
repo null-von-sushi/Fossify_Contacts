@@ -5,11 +5,12 @@ import android.annotation.SuppressLint
 import android.content.Context
 import org.fossify.commons.extensions.normalizeString
 import org.fossify.commons.models.contacts.Contact
+import org.fossify.contacts.R
 import org.fossify.contacts.helpers.Config
 import org.fossify.contacts.helpers.HanziHelper
 import java.util.Locale
 
-fun String.getSortKey(context: Context): String {
+fun String.getSortKey(): String {
     if (this.isEmpty()) {
         return ""
     }
@@ -22,7 +23,7 @@ fun String.containsHanzi() = any { it.code in 0x4E00..0x9FFF || it.code in 0x340
 
 private fun Char.isLatin() = this.code in 65..122
 
-fun Contact.isMeNickname() = nickname.trim().matches(Regex("[Mm][Ee]"))
+fun Contact.isMeNickname(context: Context) = nickname.trim().matches(Regex(context.getString(R.string.me_nickname_regex)))
 fun Contact.getProperName(config: Config, useNickname: Boolean = true): String {
     val name = if (useNickname && config.showNicknameInstead && nickname.isNotEmpty()) {
         nickname
